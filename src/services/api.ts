@@ -437,6 +437,55 @@ export const api = {
     const res = await apiClient.post("/asset-categories", data);
     return res.data;
   },
+
+  // --- Domain 9: Holding-level COA (entity, kategori, konfigurasi nomor akun per office) ---
+  async getCoaEntities(): Promise<any[]> {
+    const res = await apiClient.get("/coa-entities");
+    const raw = res.data || [];
+    return raw.map(this.normalizeItem);
+  },
+
+  async addCoaEntity(data: Params): Promise<any> {
+    const res = await apiClient.post("/coa-entities", data);
+    return res.data;
+  },
+
+  async updateCoaEntity(id: string | number, data: Params): Promise<any> {
+    const res = await apiClient.put(`/coa-entities/${id}`, data);
+    return res.data;
+  },
+
+  async deleteCoaEntity(id: string | number): Promise<any> {
+    return apiClient.delete(`/coa-entities/${id}`);
+  },
+
+  async getCoaCategories(): Promise<any[]> {
+    const res = await apiClient.get("/coa-categories");
+    return res.data || [];
+  },
+
+  async getCoaAccounts(params: Params = {}): Promise<any[]> {
+    const res = await apiClient.get("/coa-accounts", { params });
+    return res.data || [];
+  },
+
+  async addCoaAccount(data: Params): Promise<any> {
+    const res = await apiClient.post("/coa-accounts", data);
+    return res.data;
+  },
+
+  async getCoaEntityConfig(entityId: string | number): Promise<any> {
+    const res = await apiClient.get(`/coa-entities/${entityId}/coa-config`);
+    return res.data;
+  },
+
+  async saveCoaEntityCategories(entityId: string | number, categoryIds: (string | number)[]): Promise<any> {
+    return apiClient.post(`/coa-entities/${entityId}/coa-config/categories`, { category_ids: categoryIds });
+  },
+
+  async saveCoaEntityAccounts(entityId: string | number, coaIds: (string | number)[]): Promise<any> {
+    return apiClient.post(`/coa-entities/${entityId}/coa-config/accounts`, { coa_ids: coaIds });
+  },
 };
 
 // Also export as mockApi for seamless drop-in replacement across existing pages!

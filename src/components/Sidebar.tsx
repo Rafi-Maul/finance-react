@@ -77,6 +77,18 @@ export const Sidebar = ({ activeTab, setActiveTab }: SidebarProps) => {
       roles: ["SUPER_ADMIN", "KADIV_KEUANGAN", "STAFF_HOLDING", "STAFF_ANPER"]
     },
     {
+      id: "superadmin/coa-entities",
+      label: "Entitas / Anak Perusahaan",
+      icon: Network,
+      roles: ["SUPER_ADMIN"]
+    },
+    {
+      id: "superadmin/coa-entity-config",
+      label: "Konfigurasi Nomor Akun per Office",
+      icon: Sliders,
+      roles: ["SUPER_ADMIN"]
+    },
+    {
       id: "superadmin/role-permissions",
       label: "Role & Hak Akses",
       icon: ShieldCheck,

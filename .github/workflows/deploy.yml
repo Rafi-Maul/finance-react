@@ -1,0 +1,50 @@
+name: 🚀 DEPLOY TO VPS
+
+on:
+  push:
+    branches:
+      - main
+      - staging
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📥 Checkout Code
+        uses: actions/checkout@v4
+
+      - name: 🔐 Setup SSH
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.SSH_KEY }}
+
+      - name: 🚀 Deploy to VPS
+        run: |
+          BRANCH="${{ github.ref_name }}"
+          if [ "$BRANCH" = "main" ]; then
+            DIR="/home/finance-react/prod-finance-react"
+          else
+            DIR="/home/finance-react/dev-finance-react"
+          fi
+
+          echo "📂 Target Directory: $DIR"
+
+          ssh -o StrictHostKeyChecking=no -p ${{ secrets.PORT }} \
+          ${{ secrets.USERNAME }}@${{ secrets.HOST }} bash -s << EOF
+            set -e
+            echo "🔑 Connected to VPS"
+            cd ${DIR}
+
+            echo "📥 Fetch & Reset"
+            git fetch --all
+            git reset --hard origin/${BRANCH}
+
+            echo "📦 NPM Install"
+            npm install
+
+            echo "🏗 Build"
+            npm run build
+
+            echo "✅ DEPLOY SUCCESS (dist/ served directly by Nginx, no PM2)"
+          EOF

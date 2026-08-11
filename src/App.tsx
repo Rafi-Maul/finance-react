@@ -3,7 +3,7 @@ import { AuthProvider, useAuth, LoginPage } from "./modules/shared/auth";
 import { Sidebar, Navbar } from "./components/layout";
 import { DashboardPage } from "./modules/shared/dashboard";
 import { CompanyStructurePage } from "./modules/superadmin/company-structure";
-import { CoaPage } from "./modules/holding-level/coa";
+import { CoaPage, CoaEntityListPage, CoaEntityConfigPage } from "./modules/holding-level/coa";
 import { RolePermissionsPage } from "./modules/superadmin/roles";
 import { UserApprovalsPage } from "./modules/superadmin/user-approvals";
 import { UserManagementPage } from "./modules/superadmin/user-management";
@@ -44,6 +44,7 @@ const AppContent = () => {
   const [activeTab, setActiveTabState] = useState<string>(getTabFromHash);
   const [selectedOfficeForPermissions, setSelectedOfficeForPermissions] = useState<string | null>(null);
   const [selectedOfficeForEdit, setSelectedOfficeForEdit] = useState<string | null>(null);
+  const [selectedEntityForConfig, setSelectedEntityForConfig] = useState<string | number | null>(null);
 
   // Synchronize activeTab with URL hash
   const setActiveTab = (tab: string): void => {
@@ -100,6 +101,8 @@ const AppContent = () => {
       "superadmin/dashboard",
       "superadmin/company-structure",
       "superadmin/coa",
+      "superadmin/coa-entities",
+      "superadmin/coa-entity-config",
       "superadmin/role-permissions",
       "superadmin/user-list",
       "superadmin/user-approvals",
@@ -156,6 +159,17 @@ const AppContent = () => {
         return <CompanyStructurePage />;
       case "superadmin/coa":
         return <CoaPage />;
+      case "superadmin/coa-entities":
+        return (
+          <CoaEntityListPage
+            onNavigateToConfig={(entityId: string | number) => {
+              setSelectedEntityForConfig(entityId);
+              setActiveTab("superadmin/coa-entity-config");
+            }}
+          />
+        );
+      case "superadmin/coa-entity-config":
+        return <CoaEntityConfigPage initialEntityId={selectedEntityForConfig} />;
       case "superadmin/role-permissions":
         return <RolePermissionsPage />;
       case "superadmin/user-list":
