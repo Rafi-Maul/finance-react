@@ -44,13 +44,18 @@ interface SidebarProps {
 }
 
 export const Sidebar = ({ activeTab, setActiveTab }: SidebarProps) => {
-  const { currentUser, pendingApprovalsCount, logout, viewableSubmoduleCodes } = useAuth();
+  const { currentUser, pendingApprovalsCount, logout, viewableSubmoduleCodes, permissionsLoaded } = useAuth();
   const roleCode = currentUser?.roleCode || "SUPER_ADMIN";
 
   // Further restrict operational module items to submodules actually granted
   // via office_modules + role_submodule_permissions (see AuthContext).
-  const filterByPermission = (items: MenuItem[]): MenuItem[] =>
-    viewableSubmoduleCodes ? items.filter((i) => viewableSubmoduleCodes.has(i.id)) : items;
+  // While that fetch is still in flight, show nothing here rather than the
+  // full unfiltered list — otherwise every module briefly flashes on screen
+  // before narrowing down once permissions resolve.
+  const filterByPermission = (items: MenuItem[]): MenuItem[] => {
+    if (!permissionsLoaded) return [];
+    return viewableSubmoduleCodes ? items.filter((i) => viewableSubmoduleCodes.has(i.id)) : items;
+  };
 
   // Superadmin only sees management & admin menus
   const allRoles = ["SUPER_ADMIN", "ADMIN_CABANG", "KADIV_KEUANGAN", "MANAGER_ANPER", "STAFF_ANPER", "STAFF_HOLDING", "DIREKSI_HOLDING"];

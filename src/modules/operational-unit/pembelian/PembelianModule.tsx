@@ -13,6 +13,7 @@ import {
   Loader2
 } from "lucide-react";
 import type { OperationalModuleProps } from "../types";
+import { CurrencyInput } from "../../../components/common/CurrencyInput";
 import { useToast } from "../../../context/ToastContext";
 import { useAuth } from "../../../context/AuthContext";
 import { api } from "../../../services/api";
@@ -445,7 +446,7 @@ export const PembelianModule = ({ activeSubTab = "pembelian/pesanan-pembelian" }
                     <div key={idx} className="grid grid-cols-12 gap-2 items-center">
                       <input type="text" required placeholder="Deskripsi item" value={line.item_description} onChange={(e) => updatePoLine(idx, "item_description", e.target.value)} className="col-span-6 bg-slate-50 border border-slate-200 rounded-xl p-2.5 focus:outline-emerald-500" />
                       <input type="number" min={1} placeholder="Qty" value={line.qty} onChange={(e) => updatePoLine(idx, "qty", e.target.value)} className="col-span-2 bg-slate-50 border border-slate-200 rounded-xl p-2.5 font-mono focus:outline-emerald-500" />
-                      <input type="number" required placeholder="Harga satuan" value={line.unit_price} onChange={(e) => updatePoLine(idx, "unit_price", e.target.value)} className="col-span-3 bg-slate-50 border border-slate-200 rounded-xl p-2.5 font-mono focus:outline-emerald-500" />
+                      <CurrencyInput required placeholder="Harga satuan" value={line.unit_price} onChange={(raw) => updatePoLine(idx, "unit_price", raw)} className="col-span-3 bg-slate-50 border border-slate-200 rounded-xl p-2.5 font-mono focus:outline-emerald-500" />
                       <button type="button" onClick={() => removePoLine(idx)} disabled={newPoLines.length <= 1} className="col-span-1 text-slate-400 hover:text-red-600 disabled:opacity-30 cursor-pointer">
                         <X className="w-4 h-4" />
                       </button>
@@ -559,7 +560,7 @@ export const PembelianModule = ({ activeSubTab = "pembelian/pesanan-pembelian" }
                 </div>
                 <div className="md:col-span-2">
                   <label className="block text-slate-700 mb-1">Nominal Pembayaran (Rp)</label>
-                  <input type="number" required value={newPpData.amount} onChange={(e) => setNewPpData({ ...newPpData, amount: e.target.value })} className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 font-mono font-bold focus:outline-emerald-500" />
+                  <CurrencyInput required value={newPpData.amount} onChange={(raw) => setNewPpData({ ...newPpData, amount: raw })} className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 font-mono font-bold focus:outline-emerald-500" />
                 </div>
               </div>
 

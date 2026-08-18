@@ -11,6 +11,7 @@ import {
   Loader2
 } from "lucide-react";
 import type { OperationalModuleProps } from "../types";
+import { CurrencyInput } from "../../../components/common/CurrencyInput";
 import { useToast } from "../../../context/ToastContext";
 import { useAuth } from "../../../context/AuthContext";
 import { api } from "../../../services/api";
@@ -373,7 +374,7 @@ export const KasBankModule = ({ activeSubTab = "kas-bank/pembayaran" }: Operatio
                 </div>
                 <div>
                   <label className="block text-slate-700 mb-1">Nominal Pembayaran (Rp)</label>
-                  <input type="number" required value={newPayData.amount} onChange={(e) => setNewPayData({ ...newPayData, amount: e.target.value })} className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 font-mono font-bold focus:outline-emerald-500" />
+                  <CurrencyInput required value={newPayData.amount} onChange={(raw) => setNewPayData({ ...newPayData, amount: raw })} className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 font-mono font-bold focus:outline-emerald-500" />
                 </div>
                 <div>
                   <label className="block text-slate-700 mb-1">Penerima / Vendor</label>
@@ -482,7 +483,7 @@ export const KasBankModule = ({ activeSubTab = "kas-bank/pembayaran" }: Operatio
                 </div>
                 <div>
                   <label className="block text-slate-700 mb-1">Nominal Penerimaan (Rp)</label>
-                  <input type="number" required value={newRcpData.amount} onChange={(e) => setNewRcpData({ ...newRcpData, amount: e.target.value })} className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 font-mono font-bold focus:outline-emerald-500" />
+                  <CurrencyInput required value={newRcpData.amount} onChange={(raw) => setNewRcpData({ ...newRcpData, amount: raw })} className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 font-mono font-bold focus:outline-emerald-500" />
                 </div>
                 <div>
                   <label className="block text-slate-700 mb-1">Pengirim / Nasabah</label>
@@ -538,7 +539,7 @@ export const KasBankModule = ({ activeSubTab = "kas-bank/pembayaran" }: Operatio
               </div>
               <div>
                 <label className="block text-slate-700 mb-1">Nominal Transfer (Rp)</label>
-                <input type="number" required placeholder="Contoh: 10000000" value={transferForm.amount} onChange={(e) => setTransferForm({ ...transferForm, amount: e.target.value })} className="w-full p-2.5 rounded-xl border font-mono font-bold" />
+                <CurrencyInput required placeholder="Contoh: 10,000,000.00" value={transferForm.amount} onChange={(raw) => setTransferForm({ ...transferForm, amount: raw })} className="w-full p-2.5 rounded-xl border font-mono font-bold" />
               </div>
               <button type="submit" className="w-full py-3 bg-[#00c885] hover:bg-[#00b377] text-white font-bold rounded-xl shadow-md">Proses Transfer Bank</button>
             </form>

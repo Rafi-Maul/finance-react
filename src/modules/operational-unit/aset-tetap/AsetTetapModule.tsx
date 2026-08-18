@@ -11,6 +11,7 @@ import {
   Search
 } from "lucide-react";
 import type { OperationalModuleProps } from "../types";
+import { CurrencyInput } from "../../../components/common/CurrencyInput";
 import { useToast } from "../../../context/ToastContext";
 
 interface Asset {
@@ -417,12 +418,11 @@ export const AsetTetapModule = ({ activeSubTab = "aset-tetap/aset" }: Operationa
 
               <div>
                 <label className="block text-slate-700 mb-1">Nilai Perolehan (Rp)</label>
-                <input
-                  type="number"
+                <CurrencyInput
                   required
-                  placeholder="Contoh: 15000000"
+                  placeholder="Contoh: 15,000,000.00"
                   value={newAstData.buyPrice}
-                  onChange={(e) => setNewAstData({ ...newAstData, buyPrice: e.target.value })}
+                  onChange={(raw) => setNewAstData({ ...newAstData, buyPrice: raw })}
                   className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 font-mono font-bold"
                 />
               </div>

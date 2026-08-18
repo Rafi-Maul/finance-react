@@ -22,6 +22,7 @@ import { useToast } from "../../../context/ToastContext";
 import { useAuth } from "../../../context/AuthContext";
 import { api } from "../../../services/api";
 import { getUrlFormParams, setUrlFormParams, usePopStateSync } from "../useFormViewUrlSync";
+import { CurrencyInput } from "../../../components/common/CurrencyInput";
 
 type FormViewState = "list" | "create" | "edit";
 
@@ -544,7 +545,7 @@ export const BukuBesarModule = ({ activeSubTab = "buku-besar/nomor-akun" }: Oper
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 font-medium">
-                {accounts.map((acc) => (
+                {[...accounts].sort((a, b) => a.code.localeCompare(b.code, undefined, { numeric: true })).map((acc) => (
                   <tr key={acc.id} className="hover:bg-slate-50/70 transition-colors">
                     <td className="py-4 px-6 font-mono font-bold text-emerald-700">{acc.code}</td>
                     <td className="py-4 px-6 font-extrabold text-slate-900">{acc.name}</td>
@@ -651,7 +652,7 @@ export const BukuBesarModule = ({ activeSubTab = "buku-besar/nomor-akun" }: Oper
           </div>
         </div>
       ) : (
-        <div className="max-w-2xl space-y-6">
+        <div className="max-w-5xl space-y-6">
           <div className="flex items-center gap-3">
             <button onClick={backToExpenseList} className="w-9 h-9 flex items-center justify-center rounded-xl bg-white border border-slate-200 hover:bg-slate-50 text-slate-600 cursor-pointer">
               <ArrowLeft className="w-4 h-4" />
@@ -667,52 +668,101 @@ export const BukuBesarModule = ({ activeSubTab = "buku-besar/nomor-akun" }: Oper
             </div>
           </div>
 
-          <div className="bg-white border border-slate-200 rounded-3xl shadow-xs p-6">
-            {expView === "edit" && editingExp?.status === "posted" ? (
-              <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-xl p-3">
-                Beban ini sudah diposting ke Buku Besar dan tidak dapat diubah lagi.
-              </p>
-            ) : (
-              <form onSubmit={handleSaveExpense} className="space-y-4 text-xs font-semibold">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-slate-700 mb-1">Tanggal</label>
-                    <input type="date" required value={newExpData.date} onChange={(e) => setNewExpData({ ...newExpData, date: e.target.value })} className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 focus:outline-emerald-500" />
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+            <div className="lg:col-span-7 bg-white border border-slate-200 rounded-3xl shadow-xs p-6">
+              {expView === "edit" && editingExp?.status === "posted" ? (
+                <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-xl p-3">
+                  Beban ini sudah diposting ke Buku Besar dan tidak dapat diubah lagi.
+                </p>
+              ) : (
+                <form onSubmit={handleSaveExpense} className="space-y-4 text-xs font-semibold">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-slate-700 mb-1">Tanggal</label>
+                      <input type="date" required value={newExpData.date} onChange={(e) => setNewExpData({ ...newExpData, date: e.target.value })} className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 focus:outline-emerald-500" />
+                    </div>
+                    <div>
+                      <label className="block text-slate-700 mb-1">Nominal Beban (Rp)</label>
+                      <CurrencyInput
+                        disabled={expView === "edit"}
+                        required
+                        placeholder="Contoh: 1,500,000.00"
+                        value={newExpData.amount}
+                        onChange={(raw) => setNewExpData({ ...newExpData, amount: raw })}
+                        className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 font-mono font-bold focus:outline-emerald-500 disabled:opacity-60"
+                      />
+                    </div>
+                    <div className="sm:col-span-2">
+                      <label className="block text-slate-700 mb-1">Akun Beban (Debet)</label>
+                      <select disabled={expView === "edit"} required value={newExpData.expenseCoaId} onChange={(e) => setNewExpData({ ...newExpData, expenseCoaId: e.target.value })} className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 focus:outline-emerald-500 cursor-pointer disabled:opacity-60">
+                        <option value="">Pilih akun beban...</option>
+                        {coaList.map((c) => <option key={c.id} value={c.id}>{c.code} - {c.name}</option>)}
+                      </select>
+                    </div>
+                    <div className="sm:col-span-2">
+                      <label className="block text-slate-700 mb-1">Dibayar dari Akun (Kredit)</label>
+                      <select disabled={expView === "edit"} required value={newExpData.paymentCoaId} onChange={(e) => setNewExpData({ ...newExpData, paymentCoaId: e.target.value })} className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 focus:outline-emerald-500 cursor-pointer disabled:opacity-60">
+                        <option value="">Pilih akun kas/bank...</option>
+                        {coaList.map((c) => <option key={c.id} value={c.id}>{c.code} - {c.name}</option>)}
+                      </select>
+                    </div>
+                    <div className="sm:col-span-2">
+                      <label className="block text-slate-700 mb-1">Catatan</label>
+                      <textarea rows={3} placeholder="Catatan tambahan mengenai beban ini..." value={newExpData.description} onChange={(e) => setNewExpData({ ...newExpData, description: e.target.value })} className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 focus:outline-emerald-500" />
+                    </div>
                   </div>
-                  <div />
-                  <div>
-                    <label className="block text-slate-700 mb-1">Akun Beban (Debet)</label>
-                    <select disabled={expView === "edit"} required value={newExpData.expenseCoaId} onChange={(e) => setNewExpData({ ...newExpData, expenseCoaId: e.target.value })} className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 focus:outline-emerald-500 cursor-pointer disabled:opacity-60">
-                      <option value="">Pilih akun beban...</option>
-                      {coaList.map((c) => <option key={c.id} value={c.id}>{c.code} - {c.name}</option>)}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-slate-700 mb-1">Dibayar dari Akun (Kredit)</label>
-                    <select disabled={expView === "edit"} required value={newExpData.paymentCoaId} onChange={(e) => setNewExpData({ ...newExpData, paymentCoaId: e.target.value })} className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 focus:outline-emerald-500 cursor-pointer disabled:opacity-60">
-                      <option value="">Pilih akun kas/bank...</option>
-                      {coaList.map((c) => <option key={c.id} value={c.id}>{c.code} - {c.name}</option>)}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-slate-700 mb-1">Nominal Beban (Rp)</label>
-                    <input disabled={expView === "edit"} type="number" required placeholder="Contoh: 1500000" value={newExpData.amount} onChange={(e) => setNewExpData({ ...newExpData, amount: e.target.value })} className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 font-mono font-bold focus:outline-emerald-500 disabled:opacity-60" />
-                  </div>
-                  <div className="md:col-span-2">
-                    <label className="block text-slate-700 mb-1">Catatan</label>
-                    <textarea rows={3} placeholder="Catatan tambahan mengenai beban ini..." value={newExpData.description} onChange={(e) => setNewExpData({ ...newExpData, description: e.target.value })} className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 focus:outline-emerald-500" />
-                  </div>
-                </div>
 
-                <div className="pt-3 flex justify-end gap-3 border-t border-slate-100">
-                  <button type="button" onClick={backToExpenseList} className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold transition-colors cursor-pointer">Batal</button>
-                  <button type="submit" disabled={expSaving} className="flex items-center gap-1.5 px-5 py-2 bg-[#00c885] hover:bg-[#00b377] text-white font-bold rounded-xl shadow-md shadow-emerald-500/20 transition-colors cursor-pointer disabled:opacity-60">
-                    {expSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
-                    <span>{expView === "edit" ? "Simpan Perubahan" : "Simpan Beban"}</span>
-                  </button>
+                  <div className="pt-3 flex justify-end gap-3 border-t border-slate-100">
+                    <button type="button" onClick={backToExpenseList} className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold transition-colors cursor-pointer">Batal</button>
+                    <button type="submit" disabled={expSaving} className="flex items-center gap-1.5 px-5 py-2 bg-[#00c885] hover:bg-[#00b377] text-white font-bold rounded-xl shadow-md shadow-emerald-500/20 transition-colors cursor-pointer disabled:opacity-60">
+                      {expSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+                      <span>{expView === "edit" ? "Simpan Perubahan" : "Simpan Beban"}</span>
+                    </button>
+                  </div>
+                </form>
+              )}
+            </div>
+
+            {/* Live voucher preview — fills the space next to a short form with
+                something actually useful instead of leaving it empty. */}
+            <div className="lg:col-span-5 bg-slate-900 text-white rounded-3xl p-6 shadow-xl space-y-4 sticky top-6">
+              <div className="flex items-center gap-2 border-b border-slate-700/60 pb-3">
+                <CreditCard className="w-4 h-4 text-emerald-400" />
+                <h4 className="font-extrabold text-sm">Ringkasan Voucher Beban</h4>
+              </div>
+              <div className="space-y-3 text-xs">
+                <div className="flex justify-between gap-3">
+                  <span className="text-slate-400">Tanggal</span>
+                  <span className="font-bold text-right">{newExpData.date || "-"}</span>
                 </div>
-              </form>
-            )}
+                <div className="flex justify-between gap-3">
+                  <span className="text-slate-400 shrink-0">Akun Beban</span>
+                  <span className="font-bold text-right">
+                    {coaList.find((c) => String(c.id) === newExpData.expenseCoaId)
+                      ? `${coaList.find((c) => String(c.id) === newExpData.expenseCoaId)?.code} - ${coaList.find((c) => String(c.id) === newExpData.expenseCoaId)?.name}`
+                      : "-"}
+                  </span>
+                </div>
+                <div className="flex justify-between gap-3">
+                  <span className="text-slate-400 shrink-0">Dibayar dari</span>
+                  <span className="font-bold text-right">
+                    {coaList.find((c) => String(c.id) === newExpData.paymentCoaId)
+                      ? `${coaList.find((c) => String(c.id) === newExpData.paymentCoaId)?.code} - ${coaList.find((c) => String(c.id) === newExpData.paymentCoaId)?.name}`
+                      : "-"}
+                  </span>
+                </div>
+                {newExpData.description && (
+                  <div className="pt-2 border-t border-slate-700/60">
+                    <p className="text-slate-400 mb-1">Catatan</p>
+                    <p className="text-slate-200">{newExpData.description}</p>
+                  </div>
+                )}
+                <div className="pt-3 border-t border-slate-700/60">
+                  <p className="text-slate-400">Nominal Beban</p>
+                  <p className="text-2xl font-black text-emerald-400">{formatRupiah(newExpData.amount || 0)}</p>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       ))}
@@ -858,8 +908,8 @@ export const BukuBesarModule = ({ activeSubTab = "buku-besar/nomor-akun" }: Oper
                           <option value="">Pilih akun...</option>
                           {coaList.map((c) => <option key={c.id} value={c.id}>{c.code} - {c.name}</option>)}
                         </select>
-                        <input type="number" placeholder="Debet" value={line.debit} onChange={(e) => updateJrnLine(idx, "debit", e.target.value)} className="col-span-2 bg-slate-50 border border-slate-200 rounded-xl p-2.5 font-mono focus:outline-emerald-500" />
-                        <input type="number" placeholder="Kredit" value={line.kredit} onChange={(e) => updateJrnLine(idx, "kredit", e.target.value)} className="col-span-3 bg-slate-50 border border-slate-200 rounded-xl p-2.5 font-mono focus:outline-emerald-500" />
+                        <CurrencyInput placeholder="Debet" value={line.debit} onChange={(raw) => updateJrnLine(idx, "debit", raw)} className="col-span-2 bg-slate-50 border border-slate-200 rounded-xl p-2.5 font-mono focus:outline-emerald-500" />
+                        <CurrencyInput placeholder="Kredit" value={line.kredit} onChange={(raw) => updateJrnLine(idx, "kredit", raw)} className="col-span-3 bg-slate-50 border border-slate-200 rounded-xl p-2.5 font-mono focus:outline-emerald-500" />
                         <button type="button" onClick={() => removeJrnLine(idx)} disabled={newJrnLines.length <= 2} className="col-span-1 text-slate-400 hover:text-red-600 disabled:opacity-30 cursor-pointer">
                           <X className="w-4 h-4" />
                         </button>
@@ -985,12 +1035,12 @@ export const BukuBesarModule = ({ activeSubTab = "buku-besar/nomor-akun" }: Oper
                 </div>
                 <div>
                   <label className="block text-slate-700 mb-1">Alokasi Anggaran (Rp)</label>
-                  <input type="number" required placeholder="Contoh: 25000000" value={newBdgData.amount_ceiling} onChange={(e) => setNewBdgData({ ...newBdgData, amount_ceiling: e.target.value })} className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 font-mono font-bold focus:outline-emerald-500" />
+                  <CurrencyInput required placeholder="Contoh: 25,000,000.00" value={newBdgData.amount_ceiling} onChange={(raw) => setNewBdgData({ ...newBdgData, amount_ceiling: raw })} className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 font-mono font-bold focus:outline-emerald-500" />
                 </div>
                 {bdgView === "edit" && (
                   <div>
                     <label className="block text-slate-700 mb-1">Realisasi Terpakai (Rp)</label>
-                    <input type="number" value={newBdgData.amount_used} onChange={(e) => setNewBdgData({ ...newBdgData, amount_used: e.target.value })} className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 font-mono font-bold focus:outline-emerald-500" />
+                    <CurrencyInput value={newBdgData.amount_used} onChange={(raw) => setNewBdgData({ ...newBdgData, amount_used: raw })} className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 font-mono font-bold focus:outline-emerald-500" />
                   </div>
                 )}
               </div>
@@ -1099,12 +1149,11 @@ export const BukuBesarModule = ({ activeSubTab = "buku-besar/nomor-akun" }: Oper
 
               <div>
                 <label className="block text-slate-700 mb-1">Nominal Anggaran Ditransfer (Rp)</label>
-                <input
-                  type="number"
+                <CurrencyInput
                   required
-                  placeholder="Contoh: 2500000"
+                  placeholder="Contoh: 2,500,000.00"
                   value={transferForm.amount}
-                  onChange={(e) => setTransferForm({ ...transferForm, amount: e.target.value })}
+                  onChange={(raw) => setTransferForm({ ...transferForm, amount: raw })}
                   className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 font-mono font-bold"
                 />
               </div>

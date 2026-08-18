@@ -10,6 +10,7 @@ import {
   X
 } from "lucide-react";
 import type { OperationalModuleProps } from "../types";
+import { CurrencyInput } from "../../../components/common/CurrencyInput";
 import { useToast } from "../../../context/ToastContext";
 
 export const PenjualanModule = ({ activeSubTab = "penjualan/produk" }: OperationalModuleProps) => {
@@ -261,7 +262,7 @@ export const PenjualanModule = ({ activeSubTab = "penjualan/produk" }: Operation
             <div className="flex justify-between border-b pb-3"><h3 className="font-extrabold text-slate-900">Create Produk Baru</h3><button onClick={() => setShowAddPrdModal(false)}><X className="w-5 h-5 text-slate-400" /></button></div>
             <form onSubmit={handleAddProduct} className="space-y-3 text-xs font-semibold">
               <div><label className="block mb-1">Nama Produk / Layanan</label><input type="text" required value={newPrdData.name} onChange={(e) => setNewPrdData({ ...newPrdData, name: e.target.value })} className="w-full p-2.5 border rounded-xl" /></div>
-              <div><label className="block mb-1">Harga Jual (Rp)</label><input type="number" required value={newPrdData.price} onChange={(e) => setNewPrdData({ ...newPrdData, price: e.target.value })} className="w-full p-2.5 border rounded-xl font-mono font-bold" /></div>
+              <div><label className="block mb-1">Harga Jual (Rp)</label><CurrencyInput required value={newPrdData.price} onChange={(raw) => setNewPrdData({ ...newPrdData, price: raw })} className="w-full p-2.5 border rounded-xl font-mono font-bold" /></div>
               <div className="pt-3 flex justify-end gap-3 border-t"><button type="button" onClick={() => setShowAddPrdModal(false)} className="px-4 py-2 font-bold text-slate-600">Batal</button><button type="submit" className="px-5 py-2 bg-[#00c885] text-white font-bold rounded-xl">Simpan Produk</button></div>
             </form>
           </div>

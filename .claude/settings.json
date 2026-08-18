@@ -1,13 +1,11 @@
 {
   "permissions": {
     "allow": [
-      "Read(//d/hris-app/**)",
-      "Read(//d/hris-app/.github/**)",
-      "Read(//d/hris-app/.github/workflows/**)",
       "Bash(gh repo *)",
       "Bash(gh search *)",
       "Bash(gh api *)",
-      "Bash(git status *)"
+      "Bash(git status *)",
+      "Bash(grep -iE \"^\\\\.env$|\\\\.env\\\\.\")"
     ]
   },
   "hooks": {
