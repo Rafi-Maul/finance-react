@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { UserCheck, Check, X, CheckCircle2 } from "lucide-react";
 import { api as mockApi } from "../services/api";
 import { useAuth } from "../context/AuthContext";
+import { useToast } from "../context/ToastContext";
 
 interface Approval {
   id: string;
@@ -24,9 +25,9 @@ interface NewCredential {
 export const UserApprovals = () => {
   const [approvals, setApprovals] = useState<Approval[]>([]);
   const [, setLoading] = useState(true);
-  const [actionSuccess, setActionSuccess] = useState("");
   const [newCredential, setNewCredential] = useState<NewCredential | null>(null);
   const { updateApprovalsCount } = useAuth();
+  const { showToast } = useToast();
 
   useEffect(() => {
     loadApprovals();
@@ -50,28 +51,16 @@ export const UserApprovals = () => {
           password: res.temporary_password,
         });
       } else {
-        setActionSuccess(`Permohonan telah berhasil di-${action === "approve" ? "disetujui" : "ditolak"}.`);
-        setTimeout(() => setActionSuccess(""), 3500);
+        showToast(`Permohonan telah berhasil di-${action === "approve" ? "disetujui" : "ditolak"}.`);
       }
       loadApprovals();
     } else {
-      setActionSuccess(res.message || "Gagal memproses permohonan.");
-      setTimeout(() => setActionSuccess(""), 3500);
+      showToast(res.message || "Gagal memproses permohonan.", "error");
     }
   };
 
   return (
     <div className="p-6 space-y-6">
-      {/* Toast Alert */}
-      {actionSuccess && (
-        <div className="bg-emerald-500 text-white p-4 rounded-xl shadow-lg flex items-center justify-between animate-in fade-in duration-200">
-          <div className="flex items-center gap-2 font-bold text-sm">
-            <CheckCircle2 className="w-5 h-5" />
-            <span>{actionSuccess}</span>
-          </div>
-        </div>
-      )}
-
       {/* New Account Credential Banner — stays until dismissed so admin has time to copy it */}
       {newCredential && (
         <div className="bg-emerald-50 border-2 border-emerald-400 text-emerald-900 p-4 rounded-xl shadow-lg flex items-start justify-between gap-4 animate-in fade-in duration-200">

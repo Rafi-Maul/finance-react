@@ -2,6 +2,7 @@ import { useState, useEffect, type FormEvent } from "react";
 import { Network, Plus, CheckCircle2, Sliders, Trash2 } from "lucide-react";
 import { api as mockApi } from "../services/api";
 import { Modal } from "../components/common";
+import { useToast } from "../context/ToastContext";
 
 interface CoaEntity {
   id: string | number;
@@ -25,6 +26,7 @@ interface NewEntityForm {
 const emptyForm: NewEntityForm = { entity_code: "", entity_name: "", parent_entity_id: "" };
 
 export const CoaEntityList = ({ onNavigateToConfig }: CoaEntityListProps) => {
+  const { showToast } = useToast();
   const [entities, setEntities] = useState<CoaEntity[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAddModal, setShowAddModal] = useState(false);
@@ -62,12 +64,14 @@ export const CoaEntityList = ({ onNavigateToConfig }: CoaEntityListProps) => {
       setShowAddModal(false);
       setForm(emptyForm);
       await fetchEntities();
+      showToast(`Entity "${form.entity_name}" berhasil dibuat!`);
       // Alur: begitu entity baru dibuat, lanjut langsung ke pemilihan tipe nomor akun.
       if (onNavigateToConfig && created?.id) {
         onNavigateToConfig(created.id);
       }
     } catch (err: any) {
       setError(err?.message || "Gagal membuat entity");
+      showToast(err?.message || "Gagal membuat entity", "error");
     } finally {
       setSaving(false);
     }
@@ -78,8 +82,9 @@ export const CoaEntityList = ({ onNavigateToConfig }: CoaEntityListProps) => {
     try {
       await mockApi.deleteCoaEntity(entity.id);
       fetchEntities();
+      showToast(`Entity "${entity.entity_name}" berhasil dihapus`);
     } catch (err: any) {
-      alert(err?.message || "Gagal menghapus entity");
+      showToast(err?.message || "Gagal menghapus entity", "error");
     }
   };
 

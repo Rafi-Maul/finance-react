@@ -3,7 +3,6 @@ import {
   ShieldCheck,
   ChevronDown,
   ChevronUp,
-  CheckCircle2,
   AlertTriangle,
   Building2,
   Info,
@@ -16,6 +15,7 @@ import {
 } from "lucide-react";
 import { api as mockApi } from "../../../../services/api";
 import { SYSTEM_MODULES, OFFICE_TYPES } from "../../../../services/mockData";
+import { useToast } from "../../../../context/ToastContext";
 
 interface Office {
   id: string;
@@ -70,7 +70,7 @@ export const RolePermissionEditor = ({ selectedRoleCode = "SUPER_ADMIN", onBack 
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [toastMsg, setToastMsg] = useState("");
+  const { showToast } = useToast();
 
   useEffect(() => {
     loadInitialData();
@@ -129,15 +129,30 @@ export const RolePermissionEditor = ({ selectedRoleCode = "SUPER_ADMIN", onBack 
   const loadInitialData = async () => {
     setLoading(true);
     try {
-      const officeData = await mockApi.getOffices();
-      const roleData = await mockApi.getRoles();
-      const userData = await mockApi.getUsers();
+      // The API returns numeric office ids, nested `role: {code, name}`, and
+      // `office_id` (snake_case) on users — none of which match the flat,
+      // string-id shape this editor was built against (mockData.ts). Adapt
+      // at the boundary so the rest of the component can stay as-is.
+      const officeData = (await mockApi.getOffices()).map((o: any) => ({ ...o, id: String(o.id) }));
+      const roleData = (await mockApi.getRoles()).map((r: any) => ({ ...r, role: r.name, permissions: r.description }));
+      const userData = (await mockApi.getUsers()).map((u: any) => ({
+        ...u,
+        id: String(u.id),
+        officeId: u.office_id != null ? String(u.office_id) : "",
+        roleCode: u.role?.code,
+        roleName: u.role?.name,
+      }));
 
       setOffices(officeData);
       setRoles(roleData);
       setAllUsers(userData);
 
-      const initialOfficeUsers = userData.filter((u) => u.officeId === selectedOfficeId);
+      // selectedOfficeId still holds its "ent-1" placeholder default at this point —
+      // resolve a real office id from the freshly fetched data instead of using it.
+      const officeId = String(officeData[0]?.id ?? selectedOfficeId);
+      setSelectedOfficeId(officeId);
+
+      const initialOfficeUsers = userData.filter((u) => u.officeId === officeId);
       setFilteredUsers(initialOfficeUsers);
 
       if (initialOfficeUsers.length > 0) {
@@ -154,8 +169,9 @@ export const RolePermissionEditor = ({ selectedRoleCode = "SUPER_ADMIN", onBack 
       });
       setExpandedModules(initialExpand);
 
-      const targetRoleCode = initialOfficeUsers[0]?.roleCode || currentRoleCode;
-      await loadOfficeAndRolePermissions(selectedOfficeId, targetRoleCode);
+      // Don't fetch permissions here too — setSelectedOfficeId above already
+      // triggers the [selectedOfficeId] effect, which loads them once offices
+      // is populated. Calling it here as well doubled every permissions request.
     } catch (err) {
       console.error("Failed to load initial data", err);
     } finally {
@@ -297,10 +313,10 @@ export const RolePermissionEditor = ({ selectedRoleCode = "SUPER_ADMIN", onBack 
         ? `Individu "${selectedUserObj.name}" (Peran: ${roleName})`
         : `Peran "${roleName}"`;
 
-      setToastMsg(`Hak Akses untuk ${targetText} Berhasil Disimpan di ${currentOfficeObj?.name}!`);
-      setTimeout(() => setToastMsg(""), 3500);
+      showToast(`Hak Akses untuk ${targetText} berhasil disimpan di ${currentOfficeObj?.name}!`);
     } catch (err) {
       console.error("Failed to save role permissions", err);
+      showToast("Gagal menyimpan hak akses", "error");
     } finally {
       setSaving(false);
     }
@@ -358,16 +374,6 @@ export const RolePermissionEditor = ({ selectedRoleCode = "SUPER_ADMIN", onBack 
 
   return (
     <div className="space-y-6">
-      {/* Toast Notification */}
-      {toastMsg && (
-        <div className="bg-emerald-600 text-white p-4 rounded-2xl shadow-lg flex items-center justify-between animate-in fade-in duration-200">
-          <div className="flex items-center gap-2.5 font-bold text-xs">
-            <CheckCircle2 className="w-5 h-5" />
-            <span>{toastMsg}</span>
-          </div>
-        </div>
-      )}
-
       {/* Breadcrumb Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>

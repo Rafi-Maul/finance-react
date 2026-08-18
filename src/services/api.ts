@@ -269,6 +269,15 @@ export const api = {
     return res.data;
   },
 
+  async updateJournal(id: string | number, data: Params): Promise<any> {
+    const res = await apiClient.put(`/journals/${id}`, data);
+    return res.data;
+  },
+
+  async deleteJournal(id: string | number): Promise<any> {
+    return apiClient.delete(`/journals/${id}`);
+  },
+
   async postJournal(id: string | number): Promise<any> {
     return apiClient.post(`/journals/${id}/post`);
   },
@@ -281,6 +290,15 @@ export const api = {
   async addBudget(data: Params): Promise<any> {
     const res = await apiClient.post("/budgets", data);
     return res.data;
+  },
+
+  async updateBudget(id: string | number, data: Params): Promise<any> {
+    const res = await apiClient.put(`/budgets/${id}`, data);
+    return res.data;
+  },
+
+  async deleteBudget(id: string | number): Promise<any> {
+    return apiClient.delete(`/budgets/${id}`);
   },
 
   async getBudgetTransfers(): Promise<any[]> {
@@ -302,6 +320,15 @@ export const api = {
   async addTransaction(data: Params): Promise<any> {
     const res = await apiClient.post("/transactions", data);
     return res.data;
+  },
+
+  async updateTransaction(id: string | number, data: Params): Promise<any> {
+    const res = await apiClient.put(`/transactions/${id}`, data);
+    return res.data;
+  },
+
+  async deleteTransaction(id: string | number): Promise<any> {
+    return apiClient.delete(`/transactions/${id}`);
   },
 
   // --- Domain 5: Sales ---
@@ -354,6 +381,15 @@ export const api = {
   async addPurchaseOrder(data: Params): Promise<any> {
     const res = await apiClient.post("/purchase-orders", data);
     return res.data;
+  },
+
+  async updatePurchaseOrder(id: string | number, data: Params): Promise<any> {
+    const res = await apiClient.put(`/purchase-orders/${id}`, data);
+    return res.data;
+  },
+
+  async deletePurchaseOrder(id: string | number): Promise<any> {
+    return apiClient.delete(`/purchase-orders/${id}`);
   },
 
   // --- Domain 7: Inventory ---

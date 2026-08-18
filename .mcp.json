@@ -1,12 +1,11 @@
 {
   "mcpServers": {
     "code-review-graph": {
-      "command": "uvx",
+      "command": "code-review-graph",
       "args": [
-        "code-review-graph",
         "serve"
       ],
-      "cwd": "D:\\finance\\new finance",
+      "cwd": "D:\\finance\\finance-react",
       "type": "stdio"
     }
   }

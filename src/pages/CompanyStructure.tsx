@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { api as mockApi } from "../services/api";
 import { OFFICE_TYPES } from "../services/mockData";
+import { useToast } from "../context/ToastContext";
 
 interface Entity {
   id: string | number;
@@ -44,6 +45,7 @@ interface NewTypeFormData {
 }
 
 export const CompanyStructure = () => {
+  const { showToast } = useToast();
   const [entities, setEntities] = useState<Entity[]>([]);
   const [activeTab, setActiveTab] = useState("company-list"); // "company-list" | "company-type" | "tree-view"
   const [searchQuery, setSearchQuery] = useState("");
@@ -80,16 +82,22 @@ export const CompanyStructure = () => {
   const handleAddSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!formData.name) return;
-    await mockApi.addEntity(formData);
-    setShowAddModal(false);
-    setFormData({
-      code: `OFF-${entities.length + 1}`,
-      name: "",
-      type: "Office",
-      parent: "PT Ardana Perkasa Group (OFF-0)",
-      reportAccess: "Anper & Cabang Sendiri"
-    });
-    loadEntities();
+    try {
+      await mockApi.addEntity(formData);
+      setShowAddModal(false);
+      setFormData({
+        code: `OFF-${entities.length + 1}`,
+        name: "",
+        type: "Office",
+        parent: "PT Ardana Perkasa Group (OFF-0)",
+        reportAccess: "Anper & Cabang Sendiri"
+      });
+      loadEntities();
+      showToast(`Entitas "${formData.name}" berhasil dibuat!`);
+    } catch (err) {
+      console.error("Failed to add entity", err);
+      showToast("Gagal membuat entitas", "error");
+    }
   };
 
   const handleAddTypeSubmit = (e: FormEvent<HTMLFormElement>) => {
@@ -103,6 +111,7 @@ export const CompanyStructure = () => {
       badge: "bg-indigo-100 text-indigo-800 border-indigo-300",
       description: ""
     });
+    showToast(`Tipe company "${newTypeData.label}" berhasil dibuat!`);
   };
 
   // Filtered entities

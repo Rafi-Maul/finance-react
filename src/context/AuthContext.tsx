@@ -48,7 +48,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     // Load effective granular permissions (office_modules + role_submodule_permissions)
     if (!currentUser?.role?.id || !currentUser?.office?.id) {
       setViewableSubmoduleCodes(null);
-      setPermissionsLoaded(!currentUser);
+      // Nothing to fetch (e.g. Super Admin has no office), so permissions
+      // are trivially "loaded" as soon as we know that — not stuck at
+      // false forever, which is what `!currentUser` gave for a logged-in
+      // office-less user.
+      setPermissionsLoaded(true);
       return;
     }
     setPermissionsLoaded(false);
@@ -77,6 +81,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         const formattedUser: User = {
           ...res.user,
           roleCode: res.user.role?.code || "SUPER_ADMIN",
+          roleName: res.user.role?.name || "Super Admin",
           roleDetails: res.user.role || { code: "SUPER_ADMIN", name: "Super Admin" },
         };
         setCurrentUser(formattedUser);
@@ -99,6 +104,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         const formattedUser: User = {
           ...res.user,
           roleCode: res.user.role?.code || roleCode,
+          roleName: res.user.role?.name || roleCode,
           roleDetails: res.user.role || { code: roleCode, name: roleCode },
         };
         setCurrentUser(formattedUser);

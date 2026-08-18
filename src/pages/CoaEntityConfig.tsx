@@ -3,18 +3,19 @@ import {
   Sliders,
   Network,
   Save,
-  CheckCircle2,
   AlertTriangle,
   Layers,
   Landmark,
   ArrowLeftRight,
 } from "lucide-react";
 import { api as mockApi } from "../services/api";
+import { useToast } from "../context/ToastContext";
 
 interface CoaEntity {
   id: string | number;
   entity_code: string;
   entity_name: string;
+  parent_entity_id?: string | number | null;
 }
 
 interface CoaAccountRow {
@@ -67,14 +68,17 @@ export const CoaEntityConfig = ({ initialEntityId }: CoaEntityConfigProps) => {
   const [activeAccountIds, setActiveAccountIds] = useState<Set<number>>(new Set());
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [saveToast, setSaveToast] = useState(false);
+  const { showToast } = useToast();
   const [blocked, setBlocked] = useState<BlockedItem[]>([]);
 
   const loadEntities = useCallback(async () => {
     const data = await mockApi.getCoaEntities();
     setEntities(data);
-    if (!selectedEntityId && data[0]?.id) {
-      setSelectedEntityId(data[0].id);
+    if (!selectedEntityId) {
+      const holding = data.find((e: CoaEntity) => !e.parent_entity_id) || data[0];
+      if (holding?.id) {
+        setSelectedEntityId(holding.id);
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -161,18 +165,17 @@ export const CoaEntityConfig = ({ initialEntityId }: CoaEntityConfigProps) => {
       await loadConfig(selectedEntityId);
 
       if (allBlocked.length === 0) {
-        setSaveToast(true);
-        setTimeout(() => setSaveToast(false), 3000);
+        showToast(`Konfigurasi nomor akun untuk ${currentEntity?.entity_name} berhasil disimpan!`);
       }
     } catch (err) {
       console.error("Failed to save coa entity config", err);
+      showToast("Gagal menyimpan konfigurasi nomor akun", "error");
     } finally {
       setSaving(false);
     }
   };
 
   const currentEntity = entities.find((e) => String(e.id) === String(selectedEntityId));
-  const totalActiveAccounts = activeAccountIds.size;
 
   return (
     <div className="p-6 max-w-7xl mx-auto space-y-6">
@@ -210,18 +213,6 @@ export const CoaEntityConfig = ({ initialEntityId }: CoaEntityConfigProps) => {
         </div>
       </div>
 
-      {saveToast && (
-        <div className="bg-emerald-500 text-white p-4 rounded-2xl shadow-lg flex items-center justify-between animate-in fade-in duration-200">
-          <div className="flex items-center gap-2 text-xs font-bold">
-            <CheckCircle2 className="w-5 h-5" />
-            <span>Konfigurasi nomor akun untuk {currentEntity?.entity_name} berhasil disimpan!</span>
-          </div>
-          <span className="text-[10px] bg-emerald-700 px-2.5 py-1 rounded-lg">
-            {totalActiveAccounts} Akun Aktif
-          </span>
-        </div>
-      )}
-
       {blocked.length > 0 && (
         <div className="bg-amber-50 border border-amber-200 text-amber-900 p-4 rounded-2xl space-y-1.5">
           <div className="flex items-center gap-2 text-xs font-extrabold">
@@ -252,7 +243,7 @@ export const CoaEntityConfig = ({ initialEntityId }: CoaEntityConfigProps) => {
 
         <div className="flex items-center gap-4 text-xs relative z-10">
           <div className="text-right hidden sm:block">
-            <p className="text-slate-400 text-[10px] font-bold uppercase">TIPE AKUN DILANGGAN</p>
+            <p className="text-slate-400 text-[10px] font-bold uppercase">TIPE AKUN AKTIF</p>
             <p className="text-[#00c885] font-black text-lg">{activeCategoryIds.size} dari {categories.length} Kategori</p>
           </div>
           <button
@@ -301,7 +292,7 @@ export const CoaEntityConfig = ({ initialEntityId }: CoaEntityConfigProps) => {
                   <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full ${
                     categoryActive ? "bg-emerald-200/80 text-emerald-900" : "bg-slate-200 text-slate-600"
                   }`}>
-                    {categoryActive ? "Dilanggan" : "Tidak Dilanggan"}
+                    {categoryActive ? "Aktif" : "Non Aktif"}
                   </span>
                 </div>
 

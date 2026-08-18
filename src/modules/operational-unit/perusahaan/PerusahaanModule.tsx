@@ -1,6 +1,5 @@
 import { useState, useEffect, type FormEvent } from "react";
 import {
-  Building2,
   Users,
   History,
   Plus,
@@ -16,6 +15,7 @@ import {
   UserCheck
 } from "lucide-react";
 import type { OperationalModuleProps } from "../types";
+import { useToast } from "../../../context/ToastContext";
 
 interface Employee {
   id: string;
@@ -45,7 +45,7 @@ interface ActivityLog {
   ip: string;
 }
 
-export const PerusahaanModule = ({ activeSubTab = "perusahaan/profil", onSubTabChange }: OperationalModuleProps) => {
+export const PerusahaanModule = ({ activeSubTab = "perusahaan/profil" }: OperationalModuleProps) => {
   // Current active sub-tab state ("perusahaan/profil" | "perusahaan/karyawan" | "perusahaan/log-aktivitas")
   const [currentSubTab, setCurrentSubTab] = useState(activeSubTab);
 
@@ -54,13 +54,6 @@ export const PerusahaanModule = ({ activeSubTab = "perusahaan/profil", onSubTabC
       setCurrentSubTab(activeSubTab);
     }
   }, [activeSubTab]);
-
-  const handleTabChange = (tab: string) => {
-    setCurrentSubTab(tab);
-    if (onSubTabChange) {
-      onSubTabChange(tab);
-    }
-  };
 
   // --- Sub-Modul 1: Profil Perusahaan State ---
   const [companyInfo, setCompanyInfo] = useState({
@@ -111,12 +104,7 @@ export const PerusahaanModule = ({ activeSubTab = "perusahaan/profil", onSubTabC
     { id: "log-4", time: "2026-07-27 09:20:11", user: "Ahmad Subagja", action: "Update NIB & Rekening", detail: "Memperbarui NIB dan nomor rekening operasional", ip: "192.168.1.102" }
   ]);
 
-  const [toastMsg, setToastMsg] = useState("");
-
-  const showToast = (msg: string) => {
-    setToastMsg(msg);
-    setTimeout(() => setToastMsg(""), 3500);
-  };
+  const { showToast } = useToast();
 
   // Handlers Company
   const handleSaveCompany = (e: FormEvent<HTMLFormElement>) => {
@@ -168,16 +156,6 @@ export const PerusahaanModule = ({ activeSubTab = "perusahaan/profil", onSubTabC
 
   return (
     <div className="p-6 space-y-6">
-      {/* Toast Notification */}
-      {toastMsg && (
-        <div className="bg-emerald-600 text-white p-4 rounded-2xl shadow-lg flex items-center justify-between animate-in fade-in duration-200">
-          <div className="flex items-center gap-2 font-bold text-xs">
-            <CheckCircle2 className="w-5 h-5" />
-            <span>{toastMsg}</span>
-          </div>
-        </div>
-      )}
-
       {/* Header Module Title */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
@@ -187,45 +165,6 @@ export const PerusahaanModule = ({ activeSubTab = "perusahaan/profil", onSubTabC
           <p className="text-xs text-slate-500 mt-0.5">
             Pengelolaan detail profil perusahaan, manajemen data karyawan, dan audit log aktivitas internal.
           </p>
-        </div>
-
-        {/* Sub-tab Navigation Switcher */}
-        <div className="bg-white p-1.5 rounded-2xl border border-slate-200 shadow-2xs flex items-center gap-1">
-          <button
-            onClick={() => handleTabChange("perusahaan/profil")}
-            className={`px-3.5 py-2 rounded-xl text-xs font-extrabold transition-all cursor-pointer flex items-center gap-2 ${
-              currentSubTab === "perusahaan/profil"
-                ? "bg-[#00c885] text-white shadow-xs"
-                : "text-slate-600 hover:bg-slate-100"
-            }`}
-          >
-            <Building2 className="w-4 h-4" />
-            <span>Profil Perusahaan</span>
-          </button>
-
-          <button
-            onClick={() => handleTabChange("perusahaan/karyawan")}
-            className={`px-3.5 py-2 rounded-xl text-xs font-extrabold transition-all cursor-pointer flex items-center gap-2 ${
-              currentSubTab === "perusahaan/karyawan"
-                ? "bg-[#00c885] text-white shadow-xs"
-                : "text-slate-600 hover:bg-slate-100"
-            }`}
-          >
-            <Users className="w-4 h-4" />
-            <span>Data Karyawan</span>
-          </button>
-
-          <button
-            onClick={() => handleTabChange("perusahaan/log-aktivitas")}
-            className={`px-3.5 py-2 rounded-xl text-xs font-extrabold transition-all cursor-pointer flex items-center gap-2 ${
-              currentSubTab === "perusahaan/log-aktivitas"
-                ? "bg-[#00c885] text-white shadow-xs"
-                : "text-slate-600 hover:bg-slate-100"
-            }`}
-          >
-            <History className="w-4 h-4" />
-            <span>Log Aktivitas</span>
-          </button>
         </div>
       </div>
 

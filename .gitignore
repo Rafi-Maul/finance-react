@@ -17,13 +17,20 @@ dist-ssr
 !.vscode/extensions.json
 .idea
 .DS_Store
+Thumbs.db
 *.suo
 *.ntvs*
 *.njsproj
 *.sln
 *.sw?
+*.bak
+*.tmp
+
 # Added by code-review-graph
 .code-review-graph/
+
+# Claude Code local settings
+.claude/settings.local.json
 
 # Laravel
 /vendor

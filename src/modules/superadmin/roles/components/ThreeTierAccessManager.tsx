@@ -5,12 +5,12 @@ import {
   UserCheck,
   CheckSquare,
   Square,
-  CheckCircle2,
   AlertTriangle,
   Save
 } from "lucide-react";
 import { api as mockApi } from "../../../../services/api";
 import type { EffectivePermissionsResponse } from "../../../../services/api";
+import { useToast } from "../../../../context/ToastContext";
 
 interface Entity {
   id: string;
@@ -45,7 +45,7 @@ export const ThreeTierAccessManager = () => {
   const [systemModules, setSystemModules] = useState<SystemModule[]>([]);
 
   // Selections
-  const [selectedOfficeId, setSelectedOfficeId] = useState("ent-[#1]");
+  const [selectedOfficeId, setSelectedOfficeId] = useState("");
   const [selectedRoleCode, setSelectedRoleCode] = useState("ADMIN_CABANG");
 
   // State Level 1 & Level 3
@@ -54,14 +54,14 @@ export const ThreeTierAccessManager = () => {
   const [effectiveData, setEffectiveData] = useState<EffectivePermissionsResponse | null>(null);
 
   const [saving, setSaving] = useState(false);
-  const [toastMsg, setToastMsg] = useState("");
+  const { showToast } = useToast();
 
   useEffect(() => {
     loadInitialData();
   }, []);
 
   useEffect(() => {
-    if (entities.length > 0 && selectedOfficeId === "ent-[#1]") {
+    if (entities.length > 0 && !selectedOfficeId) {
       setSelectedOfficeId(entities[0].id);
     }
   }, [entities]);
@@ -132,15 +132,19 @@ export const ThreeTierAccessManager = () => {
     setSaving(true);
     const sanitizedSubModules = getSanitizedRoleSubModules();
 
-    await mockApi.updateOfficeModules(selectedOfficeId, officeModules);
-    await mockApi.updateRoleSubModules(selectedRoleCode, sanitizedSubModules);
+    try {
+      await mockApi.updateOfficeModules(selectedOfficeId, officeModules);
+      await mockApi.updateRoleSubModules(selectedRoleCode, sanitizedSubModules);
 
-    const effective = await mockApi.getEffectivePermissions(selectedOfficeId, selectedRoleCode);
-    setEffectiveData(effective);
-
-    setSaving(false);
-    setToastMsg("Konfigurasi Akses 3-Level (Office → Modul → SubModul → Role) Berhasil Disimpan!");
-    setTimeout(() => setToastMsg(""), 4000);
+      const effective = await mockApi.getEffectivePermissions(selectedOfficeId, selectedRoleCode);
+      setEffectiveData(effective);
+      showToast("Konfigurasi Akses 3-Level (Office → Modul → SubModul → Role) berhasil disimpan!");
+    } catch (err) {
+      console.error("Failed to save 3-tier access config", err);
+      showToast("Gagal menyimpan konfigurasi akses", "error");
+    } finally {
+      setSaving(false);
+    }
   };
 
   const selectedOfficeObj = entities.find((e) => e.id === selectedOfficeId) || entities[0];
@@ -148,16 +152,6 @@ export const ThreeTierAccessManager = () => {
 
   return (
     <div className="space-y-6">
-      {/* Toast */}
-      {toastMsg && (
-        <div className="bg-emerald-500 text-white p-4 rounded-2xl shadow-lg flex items-center justify-between animate-in fade-in duration-200">
-          <div className="flex items-center gap-2 font-bold text-xs">
-            <CheckCircle2 className="w-5 h-5" />
-            <span>{toastMsg}</span>
-          </div>
-        </div>
-      )}
-
       {/* Header Banner Explanation */}
       <div className="bg-slate-900 text-white rounded-3xl p-6 shadow-xl border border-slate-800 relative overflow-hidden">
         <div className="absolute -right-10 -bottom-10 w-48 h-48 bg-[#00c885]/10 rounded-full blur-2xl pointer-events-none"></div>

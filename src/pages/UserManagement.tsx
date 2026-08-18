@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, type FormEvent } from "react";
 import {
   Users,
   Search,
@@ -15,9 +15,15 @@ import {
   KeyRound,
   UserCheck,
   Lock,
-  RefreshCw
+  RefreshCw,
+  Pencil,
+  Trash2,
+  Plus
 } from "lucide-react";
 import { api as mockApi } from "../services/api";
+import { Modal } from "../components/common";
+import { useToast } from "../context/ToastContext";
+import { useAuth } from "../context/AuthContext";
 
 interface UserRow {
   id: string;
@@ -25,6 +31,8 @@ interface UserRow {
   username: string;
   email: string;
   phone?: string;
+  role_id?: string | number;
+  office_id?: string | number;
   roleCode: string;
   roleName: string;
   company?: string | { name?: string; code?: string };
@@ -36,8 +44,47 @@ interface UserRow {
   password?: string;
 }
 
+interface OfficeOption {
+  id: string | number;
+  name: string;
+  code?: string;
+}
+
+interface RoleOption {
+  id: string | number;
+  code: string;
+  name: string;
+}
+
+interface EditUserForm {
+  username: string;
+  name: string;
+  email: string;
+  password: string;
+  role_id: string | number;
+  office_id: string | number;
+  status: string;
+}
+
+const emptyEditForm: EditUserForm = {
+  username: "",
+  name: "",
+  email: "",
+  password: "",
+  role_id: "",
+  office_id: "",
+  status: "Aktif"
+};
+
+type NewUserForm = EditUserForm;
+const emptyAddForm: NewUserForm = emptyEditForm;
+
 export const UserManagement = () => {
+  const { showToast } = useToast();
+  const { currentUser } = useAuth();
   const [users, setUsers] = useState<UserRow[]>([]);
+  const [offices, setOffices] = useState<OfficeOption[]>([]);
+  const [roles, setRoles] = useState<RoleOption[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedRole, setSelectedRole] = useState("ALL");
@@ -51,19 +98,122 @@ export const UserManagement = () => {
   const [detailShowPassword, setDetailShowPassword] = useState(false);
   const [copiedField, setCopiedField] = useState<string | null>(null);
 
+  // Edit user modal state
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editingUser, setEditingUser] = useState<UserRow | null>(null);
+  const [editForm, setEditForm] = useState<EditUserForm>(emptyEditForm);
+  const [saving, setSaving] = useState(false);
+
+  // Add user modal state
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [addForm, setAddForm] = useState<NewUserForm>(emptyAddForm);
+  const [adding, setAdding] = useState(false);
+
   useEffect(() => {
     fetchUsers();
+    mockApi.getRoles().then(setRoles).catch((err) => console.error("Failed to fetch roles", err));
+    mockApi.getOffices().then(setOffices).catch((err) => console.error("Failed to fetch offices", err));
   }, []);
 
   const fetchUsers = async () => {
     setLoading(true);
     try {
       const data = await mockApi.getUsers();
-      setUsers(data);
+      // Backend nests role/office as objects (getUsers only flattens office to a
+      // display string) — surface roleCode/roleName here so badges & the role
+      // filter, which read them directly, actually work.
+      const mapped = data.map((u: UserRow & { role?: { code?: string; name?: string } }) => ({
+        ...u,
+        roleCode: u.role?.code || u.roleCode,
+        roleName: u.role?.name || u.roleName
+      }));
+      setUsers(mapped);
     } catch (err) {
       console.error("Failed to fetch users", err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const openEditModal = (user: UserRow) => {
+    setEditingUser(user);
+    setEditForm({
+      username: user.username,
+      name: user.name,
+      email: user.email,
+      password: "",
+      role_id: user.role_id ?? "",
+      office_id: user.office_id ?? "",
+      status: user.status || "Aktif"
+    });
+    setShowEditModal(true);
+  };
+
+  const handleEditSubmit = async (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!editingUser) return;
+    setSaving(true);
+    try {
+      const payload: Record<string, unknown> = {
+        username: editForm.username,
+        name: editForm.name,
+        email: editForm.email,
+        role_id: editForm.role_id,
+        office_id: editForm.office_id,
+        status: editForm.status
+      };
+      if (editForm.password.trim()) {
+        payload.password = editForm.password.trim();
+      }
+      await mockApi.updateUser(editingUser.id, payload);
+      setShowEditModal(false);
+      setEditingUser(null);
+      await fetchUsers();
+      showToast(`User "${editForm.name}" berhasil diperbarui!`);
+    } catch (err: any) {
+      showToast(err?.message || "Gagal memperbarui user", "error");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleAddSubmit = async (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setAdding(true);
+    try {
+      await mockApi.addUser({
+        username: addForm.username,
+        name: addForm.name,
+        email: addForm.email,
+        password: addForm.password,
+        role_id: addForm.role_id,
+        office_id: addForm.office_id,
+        status: addForm.status
+      });
+      setShowAddModal(false);
+      setAddForm(emptyAddForm);
+      await fetchUsers();
+      showToast(`User "${addForm.name}" berhasil dibuat!`);
+    } catch (err: any) {
+      showToast(err?.message || "Gagal membuat user", "error");
+    } finally {
+      setAdding(false);
+    }
+  };
+
+  const handleDeleteUser = async (user: UserRow) => {
+    if (currentUser && String(currentUser.id) === String(user.id)) {
+      showToast("Tidak dapat menghapus akun Anda sendiri", "error");
+      return;
+    }
+    if (!window.confirm(`Hapus user "${user.name}"? Tindakan ini tidak dapat dibatalkan.`)) return;
+    try {
+      await mockApi.deleteUser(user.id);
+      if (detailUser?.id === user.id) setDetailUser(null);
+      await fetchUsers();
+      showToast(`User "${user.name}" berhasil dihapus`);
+    } catch (err: any) {
+      showToast(err?.message || "Gagal menghapus user", "error");
     }
   };
 
@@ -122,6 +272,224 @@ export const UserManagement = () => {
     }
   };
 
+  const editModal = (
+    <Modal isOpen={showEditModal} onClose={() => setShowEditModal(false)} title="Edit User" maxWidth="max-w-lg">
+      <form onSubmit={handleEditSubmit} className="space-y-4 text-xs font-semibold">
+        <div>
+          <label className="block text-slate-700 mb-1">Nama Lengkap</label>
+          <input
+            type="text"
+            required
+            value={editForm.name}
+            onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+            className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-slate-800 focus:outline-emerald-500"
+          />
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="block text-slate-700 mb-1">Username</label>
+            <input
+              type="text"
+              required
+              value={editForm.username}
+              onChange={(e) => setEditForm({ ...editForm, username: e.target.value })}
+              className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 font-mono font-bold text-slate-800 focus:outline-emerald-500"
+            />
+          </div>
+          <div>
+            <label className="block text-slate-700 mb-1">Email</label>
+            <input
+              type="email"
+              required
+              value={editForm.email}
+              onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
+              className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-slate-800 focus:outline-emerald-500"
+            />
+          </div>
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="block text-slate-700 mb-1">Role</label>
+            <select
+              required
+              value={editForm.role_id}
+              onChange={(e) => setEditForm({ ...editForm, role_id: e.target.value })}
+              className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white text-slate-800 focus:outline-emerald-500 cursor-pointer"
+            >
+              <option value="" disabled>Pilih Role</option>
+              {roles.map((r) => (
+                <option key={r.id} value={r.id}>{r.name}</option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="block text-slate-700 mb-1">Office / Entitas</label>
+            <select
+              required
+              value={editForm.office_id}
+              onChange={(e) => setEditForm({ ...editForm, office_id: e.target.value })}
+              className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white text-slate-800 focus:outline-emerald-500 cursor-pointer"
+            >
+              <option value="" disabled>Pilih Office</option>
+              {offices.map((o) => (
+                <option key={o.id} value={o.id}>{o.name}</option>
+              ))}
+            </select>
+          </div>
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="block text-slate-700 mb-1">Status Akun</label>
+            <select
+              value={editForm.status}
+              onChange={(e) => setEditForm({ ...editForm, status: e.target.value })}
+              className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white text-slate-800 focus:outline-emerald-500 cursor-pointer"
+            >
+              <option value="Aktif">Aktif</option>
+              <option value="Non Aktif">Non Aktif</option>
+            </select>
+          </div>
+          <div>
+            <label className="block text-slate-700 mb-1">Password Baru</label>
+            <input
+              type="password"
+              placeholder="Kosongkan jika tidak diubah"
+              value={editForm.password}
+              onChange={(e) => setEditForm({ ...editForm, password: e.target.value })}
+              className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-slate-800 focus:outline-emerald-500"
+            />
+          </div>
+        </div>
+        <div className="pt-3 flex justify-end gap-3 border-t border-slate-100">
+          <button
+            type="button"
+            onClick={() => setShowEditModal(false)}
+            className="px-4 py-2 text-slate-600 font-bold cursor-pointer"
+          >
+            Batal
+          </button>
+          <button
+            type="submit"
+            disabled={saving}
+            className="px-5 py-2 bg-[#00c885] hover:bg-[#00b377] text-white font-bold rounded-xl transition-all cursor-pointer disabled:opacity-60"
+          >
+            {saving ? "Menyimpan..." : "Simpan Perubahan"}
+          </button>
+        </div>
+      </form>
+    </Modal>
+  );
+
+  const addModal = (
+    <Modal isOpen={showAddModal} onClose={() => setShowAddModal(false)} title="Tambah User Baru" maxWidth="max-w-lg">
+      <form onSubmit={handleAddSubmit} className="space-y-4 text-xs font-semibold">
+        <div>
+          <label className="block text-slate-700 mb-1">Nama Lengkap</label>
+          <input
+            type="text"
+            required
+            value={addForm.name}
+            onChange={(e) => setAddForm({ ...addForm, name: e.target.value })}
+            className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-slate-800 focus:outline-emerald-500"
+          />
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="block text-slate-700 mb-1">Username</label>
+            <input
+              type="text"
+              required
+              value={addForm.username}
+              onChange={(e) => setAddForm({ ...addForm, username: e.target.value })}
+              className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 font-mono font-bold text-slate-800 focus:outline-emerald-500"
+            />
+          </div>
+          <div>
+            <label className="block text-slate-700 mb-1">Email</label>
+            <input
+              type="email"
+              required
+              value={addForm.email}
+              onChange={(e) => setAddForm({ ...addForm, email: e.target.value })}
+              className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-slate-800 focus:outline-emerald-500"
+            />
+          </div>
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="block text-slate-700 mb-1">Role</label>
+            <select
+              required
+              value={addForm.role_id}
+              onChange={(e) => setAddForm({ ...addForm, role_id: e.target.value })}
+              className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white text-slate-800 focus:outline-emerald-500 cursor-pointer"
+            >
+              <option value="" disabled>Pilih Role</option>
+              {roles.map((r) => (
+                <option key={r.id} value={r.id}>{r.name}</option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="block text-slate-700 mb-1">Office / Entitas</label>
+            <select
+              required
+              value={addForm.office_id}
+              onChange={(e) => setAddForm({ ...addForm, office_id: e.target.value })}
+              className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white text-slate-800 focus:outline-emerald-500 cursor-pointer"
+            >
+              <option value="" disabled>Pilih Office</option>
+              {offices.map((o) => (
+                <option key={o.id} value={o.id}>{o.name}</option>
+              ))}
+            </select>
+          </div>
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="block text-slate-700 mb-1">Status Akun</label>
+            <select
+              value={addForm.status}
+              onChange={(e) => setAddForm({ ...addForm, status: e.target.value })}
+              className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white text-slate-800 focus:outline-emerald-500 cursor-pointer"
+            >
+              <option value="Aktif">Aktif</option>
+              <option value="Non Aktif">Non Aktif</option>
+            </select>
+          </div>
+          <div>
+            <label className="block text-slate-700 mb-1">Password</label>
+            <input
+              type="password"
+              required
+              minLength={6}
+              placeholder="Minimal 6 karakter"
+              value={addForm.password}
+              onChange={(e) => setAddForm({ ...addForm, password: e.target.value })}
+              className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-slate-800 focus:outline-emerald-500"
+            />
+          </div>
+        </div>
+        <div className="pt-3 flex justify-end gap-3 border-t border-slate-100">
+          <button
+            type="button"
+            onClick={() => setShowAddModal(false)}
+            className="px-4 py-2 text-slate-600 font-bold cursor-pointer"
+          >
+            Batal
+          </button>
+          <button
+            type="submit"
+            disabled={adding}
+            className="px-5 py-2 bg-[#00c885] hover:bg-[#00b377] text-white font-bold rounded-xl transition-all cursor-pointer disabled:opacity-60"
+          >
+            {adding ? "Menyimpan..." : "Simpan User"}
+          </button>
+        </div>
+      </form>
+    </Modal>
+  );
+
   // -------------------------------------------------------------
   // VIEW 1: USER DETAIL PAGE
   // -------------------------------------------------------------
@@ -145,6 +513,20 @@ export const UserManagement = () => {
             <span className="px-3 py-1 bg-emerald-100 text-emerald-800 text-xs font-bold rounded-full border border-emerald-200">
               ● Status: {detailUser.status || "Aktif"}
             </span>
+            <button
+              onClick={() => openEditModal(detailUser)}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-bold text-xs rounded-xl shadow-xs transition-all cursor-pointer"
+            >
+              <Pencil className="w-3.5 h-3.5 text-emerald-600" />
+              <span>Edit</span>
+            </button>
+            <button
+              onClick={() => handleDeleteUser(detailUser)}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-200 hover:bg-red-50 hover:border-red-200 text-red-600 font-bold text-xs rounded-xl shadow-xs transition-all cursor-pointer"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              <span>Hapus</span>
+            </button>
           </div>
         </div>
 
@@ -356,6 +738,7 @@ export const UserManagement = () => {
             </div>
           </div>
         </div>
+        {editModal}
       </div>
     );
   }
@@ -380,13 +763,25 @@ export const UserManagement = () => {
           </p>
         </div>
 
-        <button
-          onClick={fetchUsers}
-          className="flex items-center gap-2 px-4 py-2 bg-emerald-50 border border-emerald-200 text-emerald-800 hover:bg-emerald-100 rounded-xl text-xs font-semibold transition-all cursor-pointer self-start md:self-auto"
-        >
-          <RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin" : ""}`} />
-          <span>Refresh Data</span>
-        </button>
+        <div className="flex items-center gap-2 self-start md:self-auto">
+          <button
+            onClick={() => {
+              setAddForm(emptyAddForm);
+              setShowAddModal(true);
+            }}
+            className="flex items-center gap-2 px-4 py-2 bg-[#00c885] hover:bg-[#00b377] text-white rounded-xl text-xs font-bold transition-all cursor-pointer shadow-md shadow-emerald-500/20"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            <span>Tambah User</span>
+          </button>
+          <button
+            onClick={fetchUsers}
+            className="flex items-center gap-2 px-4 py-2 bg-emerald-50 border border-emerald-200 text-emerald-800 hover:bg-emerald-100 rounded-xl text-xs font-semibold transition-all cursor-pointer"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin" : ""}`} />
+            <span>Refresh Data</span>
+          </button>
+        </div>
       </div>
 
       {/* Overview Stats Cards */}
@@ -542,18 +937,35 @@ export const UserManagement = () => {
                         </div>
                       </td>
 
-                      {/* Action Button: Detail User */}
-                      <td className="py-4 px-6 text-center">
-                        <button
-                          onClick={() => {
-                            setDetailUser(u);
-                            setDetailShowPassword(false);
-                          }}
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200 text-xs font-bold transition-all cursor-pointer shadow-2xs"
-                        >
-                          <Eye className="w-3.5 h-3.5" />
-                          <span>Detail User</span>
-                        </button>
+                      {/* Action Buttons: Detail, Edit, Delete */}
+                      <td className="py-4 px-6">
+                        <div className="flex items-center justify-center gap-1.5">
+                          <button
+                            onClick={() => {
+                              setDetailUser(u);
+                              setDetailShowPassword(false);
+                            }}
+                            title="Detail User"
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200 text-xs font-bold transition-all cursor-pointer shadow-2xs"
+                          >
+                            <Eye className="w-3.5 h-3.5" />
+                            <span>Detail</span>
+                          </button>
+                          <button
+                            onClick={() => openEditModal(u)}
+                            title="Edit User"
+                            className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 transition-all cursor-pointer"
+                          >
+                            <Pencil className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteUser(u)}
+                            title="Hapus User"
+                            className="p-2 rounded-xl bg-slate-100 hover:bg-red-50 text-slate-600 hover:text-red-600 transition-all cursor-pointer"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   );
@@ -563,6 +975,8 @@ export const UserManagement = () => {
           </table>
         </div>
       </div>
+      {editModal}
+      {addModal}
     </div>
   );
 };

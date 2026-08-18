@@ -71,12 +71,6 @@ export const Sidebar = ({ activeTab, setActiveTab }: SidebarProps) => {
       roles: ["SUPER_ADMIN", "ADMIN_CABANG", "MANAGER_ANPER", "DIREKSI_HOLDING"]
     },
     {
-      id: "superadmin/coa",
-      label: "Chart of Accounts (COA)",
-      icon: FileSpreadsheet,
-      roles: ["SUPER_ADMIN", "KADIV_KEUANGAN", "STAFF_HOLDING", "STAFF_ANPER"]
-    },
-    {
       id: "superadmin/coa-entities",
       label: "Entitas / Anak Perusahaan",
       icon: Network,

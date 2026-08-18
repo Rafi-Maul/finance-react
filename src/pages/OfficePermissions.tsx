@@ -7,7 +7,6 @@ import {
   CheckSquare,
   Building,
   Info,
-  CheckCircle2,
   Settings,
   Briefcase,
   BookOpen,
@@ -20,6 +19,7 @@ import {
 } from "lucide-react";
 import { api as mockApi } from "../services/api";
 import { SYSTEM_MODULES } from "../services/mockData";
+import { useToast } from "../context/ToastContext";
 
 interface Office {
   id: string;
@@ -35,12 +35,12 @@ interface OfficePermissionsProps {
 }
 
 export const OfficePermissions = ({ initialOfficeId }: OfficePermissionsProps) => {
+  const { showToast } = useToast();
   const [offices, setOffices] = useState<Office[]>([]);
   const [selectedOfficeId, setSelectedOfficeId] = useState(initialOfficeId || "ent-1");
   const [activeModules, setActiveModules] = useState<string[]>([]);
   const [, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [saveToast, setSaveToast] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -99,12 +99,10 @@ export const OfficePermissions = ({ initialOfficeId }: OfficePermissionsProps) =
     setSaving(true);
     try {
       await mockApi.updateOfficeModules(selectedOfficeId, activeModules);
-      setSaveToast(true);
-      setTimeout(() => {
-        setSaveToast(false);
-      }, 3000);
+      showToast(`Hak Akses Modul untuk ${currentOffice?.name} berhasil disimpan!`);
     } catch (err) {
       console.error("Failed to save office modules", err);
+      showToast("Gagal menyimpan hak akses modul", "error");
     } finally {
       setSaving(false);
     }
@@ -163,19 +161,6 @@ export const OfficePermissions = ({ initialOfficeId }: OfficePermissionsProps) =
           </div>
         </div>
       </div>
-
-      {/* Save Toast Notification */}
-      {saveToast && (
-        <div className="bg-emerald-500 text-white p-4 rounded-2xl shadow-lg flex items-center justify-between animate-in fade-in duration-200">
-          <div className="flex items-center gap-2 text-xs font-bold">
-            <CheckCircle2 className="w-5 h-5" />
-            <span>Hak Akses Modul untuk {currentOffice?.name} berhasil disimpan!</span>
-          </div>
-          <span className="text-[10px] bg-emerald-700 px-2.5 py-1 rounded-lg">
-            {activeModules.length} Modul Aktif
-          </span>
-        </div>
-      )}
 
       {/* Active Office Banner */}
       <div className="bg-slate-900 text-white p-6 rounded-3xl flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-xl relative overflow-hidden">

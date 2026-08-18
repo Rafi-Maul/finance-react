@@ -10,12 +10,12 @@ import {
   Plus,
   Edit,
   Trash2,
-  CheckCircle2,
   X
 } from "lucide-react";
 import type { OperationalModuleProps } from "../types";
+import { useToast } from "../../../context/ToastContext";
 
-export const PersediaanModule = ({ activeSubTab = "persediaan/permintaan-barang", onSubTabChange }: OperationalModuleProps) => {
+export const PersediaanModule = ({ activeSubTab = "persediaan/permintaan-barang" }: OperationalModuleProps) => {
   const [currentSubTab, setCurrentSubTab] = useState(activeSubTab);
 
   useEffect(() => {
@@ -24,18 +24,7 @@ export const PersediaanModule = ({ activeSubTab = "persediaan/permintaan-barang"
     }
   }, [activeSubTab]);
 
-  const handleTabChange = (tab: string) => {
-    setCurrentSubTab(tab);
-    if (onSubTabChange) {
-      onSubTabChange(tab);
-    }
-  };
-  const [toastMsg, setToastMsg] = useState("");
-
-  const showToast = (msg: string) => {
-    setToastMsg(msg);
-    setTimeout(() => setToastMsg(""), 3500);
-  };
+  const { showToast } = useToast();
 
   // 1. Permintaan Barang State
   const [itemRequests, setItemRequests] = useState([
@@ -123,41 +112,12 @@ export const PersediaanModule = ({ activeSubTab = "persediaan/permintaan-barang"
 
   return (
     <div className="p-6 space-y-6">
-      {toastMsg && (
-        <div className="bg-emerald-600 text-white p-4 rounded-2xl shadow-lg flex items-center justify-between">
-          <div className="flex items-center gap-2 font-bold text-xs"><CheckCircle2 className="w-5 h-5" /><span>{toastMsg}</span></div>
-        </div>
-      )}
 
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-black text-slate-900 tracking-tight">Modul Persediaan (Inventory)</h1>
           <p className="text-xs text-slate-500 mt-0.5">Manajemen permintaan barang, pemindahan stok, penyelesaian pesanan, barang/jasa, merek, kategori, & log aktivitas.</p>
         </div>
-      </div>
-
-      <div className="bg-white p-2 rounded-2xl border border-slate-200 shadow-2xs grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-1.5">
-        <button onClick={() => handleTabChange("persediaan/permintaan-barang")} className={`py-2 px-3 rounded-xl text-xs font-extrabold cursor-pointer flex items-center justify-center gap-1.5 ${currentSubTab === "persediaan/permintaan-barang" ? "bg-[#00c885] text-white" : "text-slate-600 hover:bg-slate-100"}`}>
-          <Boxes className="w-3.5 h-3.5" /> <span>Permintaan Barang</span>
-        </button>
-        <button onClick={() => handleTabChange("persediaan/pemindahan-barang")} className={`py-2 px-3 rounded-xl text-xs font-extrabold cursor-pointer flex items-center justify-center gap-1.5 ${currentSubTab === "persediaan/pemindahan-barang" ? "bg-[#00c885] text-white" : "text-slate-600 hover:bg-slate-100"}`}>
-          <ArrowLeftRight className="w-3.5 h-3.5" /> <span>Pemindahan Barang</span>
-        </button>
-        <button onClick={() => handleTabChange("persediaan/penyelesaian-pesanan")} className={`py-2 px-3 rounded-xl text-xs font-extrabold cursor-pointer flex items-center justify-center gap-1.5 ${currentSubTab === "persediaan/penyelesaian-pesanan" ? "bg-[#00c885] text-white" : "text-slate-600 hover:bg-slate-100"}`}>
-          <PackageCheck className="w-3.5 h-3.5" /> <span>Penyelesaian</span>
-        </button>
-        <button onClick={() => handleTabChange("persediaan/barang-jasa")} className={`py-2 px-3 rounded-xl text-xs font-extrabold cursor-pointer flex items-center justify-center gap-1.5 ${currentSubTab === "persediaan/barang-jasa" ? "bg-[#00c885] text-white" : "text-slate-600 hover:bg-slate-100"}`}>
-          <CheckSquare className="w-3.5 h-3.5" /> <span>Barang / Jasa</span>
-        </button>
-        <button onClick={() => handleTabChange("persediaan/merek-barang")} className={`py-2 px-3 rounded-xl text-xs font-extrabold cursor-pointer flex items-center justify-center gap-1.5 ${currentSubTab === "persediaan/merek-barang" ? "bg-[#00c885] text-white" : "text-slate-600 hover:bg-slate-100"}`}>
-          <Bookmark className="w-3.5 h-3.5" /> <span>Merek Barang</span>
-        </button>
-        <button onClick={() => handleTabChange("persediaan/kategori-barang")} className={`py-2 px-3 rounded-xl text-xs font-extrabold cursor-pointer flex items-center justify-center gap-1.5 ${currentSubTab === "persediaan/kategori-barang" ? "bg-[#00c885] text-white" : "text-slate-600 hover:bg-slate-100"}`}>
-          <Layers className="w-3.5 h-3.5" /> <span>Kategori Barang</span>
-        </button>
-        <button onClick={() => handleTabChange("persediaan/log-aktivitas")} className={`py-2 px-3 rounded-xl text-xs font-extrabold cursor-pointer flex items-center justify-center gap-1.5 ${currentSubTab === "persediaan/log-aktivitas" ? "bg-[#00c885] text-white" : "text-slate-600 hover:bg-slate-100"}`}>
-          <History className="w-3.5 h-3.5" /> <span>Log Persediaan</span>
-        </button>
       </div>
 
       {/* SUB 1: PERMINTAAN BARANG */}

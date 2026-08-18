@@ -6,7 +6,8 @@
       "Read(//d/hris-app/.github/workflows/**)",
       "Bash(gh repo *)",
       "Bash(gh search *)",
-      "Bash(gh api *)"
+      "Bash(gh api *)",
+      "Bash(git status *)"
     ]
   },
   "hooks": {

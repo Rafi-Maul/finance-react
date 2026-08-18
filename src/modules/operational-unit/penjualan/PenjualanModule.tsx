@@ -7,12 +7,12 @@ import {
   Plus,
   Edit,
   Trash2,
-  CheckCircle2,
   X
 } from "lucide-react";
 import type { OperationalModuleProps } from "../types";
+import { useToast } from "../../../context/ToastContext";
 
-export const PenjualanModule = ({ activeSubTab = "penjualan/produk", onSubTabChange }: OperationalModuleProps) => {
+export const PenjualanModule = ({ activeSubTab = "penjualan/produk" }: OperationalModuleProps) => {
   const [currentSubTab, setCurrentSubTab] = useState(activeSubTab);
 
   useEffect(() => {
@@ -21,18 +21,7 @@ export const PenjualanModule = ({ activeSubTab = "penjualan/produk", onSubTabCha
     }
   }, [activeSubTab]);
 
-  const handleTabChange = (tab: string) => {
-    setCurrentSubTab(tab);
-    if (onSubTabChange) {
-      onSubTabChange(tab);
-    }
-  };
-  const [toastMsg, setToastMsg] = useState("");
-
-  const showToast = (msg: string) => {
-    setToastMsg(msg);
-    setTimeout(() => setToastMsg(""), 3500);
-  };
+  const { showToast } = useToast();
 
   const formatRupiah = (num: number | string) => new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR" }).format(Number(num));
 
@@ -95,31 +84,11 @@ export const PenjualanModule = ({ activeSubTab = "penjualan/produk", onSubTabCha
 
   return (
     <div className="p-6 space-y-6">
-      {toastMsg && (
-        <div className="bg-emerald-600 text-white p-4 rounded-2xl shadow-lg flex items-center justify-between">
-          <div className="flex items-center gap-2 font-bold text-xs"><CheckCircle2 className="w-5 h-5" /><span>{toastMsg}</span></div>
-        </div>
-      )}
 
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-black text-slate-900 tracking-tight">Modul Penjualan</h1>
           <p className="text-xs text-slate-500 mt-0.5">Manajemen produk, jenis produk, data nasabah/pelanggan, & log aktivitas penjualan.</p>
-        </div>
-
-        <div className="bg-white p-1.5 rounded-2xl border border-slate-200 shadow-2xs flex items-center gap-1">
-          <button onClick={() => handleTabChange("penjualan/produk")} className={`px-3 py-2 rounded-xl text-xs font-extrabold cursor-pointer flex items-center gap-1.5 ${currentSubTab === "penjualan/produk" ? "bg-[#00c885] text-white" : "text-slate-600 hover:bg-slate-100"}`}>
-            <ShoppingBag className="w-3.5 h-3.5" /> <span>Produk</span>
-          </button>
-          <button onClick={() => handleTabChange("penjualan/jenis-produk")} className={`px-3 py-2 rounded-xl text-xs font-extrabold cursor-pointer flex items-center gap-1.5 ${currentSubTab === "penjualan/jenis-produk" ? "bg-[#00c885] text-white" : "text-slate-600 hover:bg-slate-100"}`}>
-            <Tag className="w-3.5 h-3.5" /> <span>Jenis Produk</span>
-          </button>
-          <button onClick={() => handleTabChange("penjualan/pelanggan")} className={`px-3 py-2 rounded-xl text-xs font-extrabold cursor-pointer flex items-center gap-1.5 ${currentSubTab === "penjualan/pelanggan" ? "bg-[#00c885] text-white" : "text-slate-600 hover:bg-slate-100"}`}>
-            <Users className="w-3.5 h-3.5" /> <span>Nasabah / Pelanggan</span>
-          </button>
-          <button onClick={() => handleTabChange("penjualan/log-aktivitas")} className={`px-3 py-2 rounded-xl text-xs font-extrabold cursor-pointer flex items-center gap-1.5 ${currentSubTab === "penjualan/log-aktivitas" ? "bg-[#00c885] text-white" : "text-slate-600 hover:bg-slate-100"}`}>
-            <History className="w-3.5 h-3.5" /> <span>Log Penjualan</span>
-          </button>
         </div>
       </div>
 

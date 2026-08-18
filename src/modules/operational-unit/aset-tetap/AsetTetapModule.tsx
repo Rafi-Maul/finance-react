@@ -7,11 +7,11 @@ import {
   Edit,
   Trash2,
   Eye,
-  CheckCircle2,
   X,
   Search
 } from "lucide-react";
 import type { OperationalModuleProps } from "../types";
+import { useToast } from "../../../context/ToastContext";
 
 interface Asset {
   id: string;
@@ -25,7 +25,7 @@ interface Asset {
   status: string;
 }
 
-export const AsetTetapModule = ({ activeSubTab = "aset-tetap/aset", onSubTabChange }: OperationalModuleProps) => {
+export const AsetTetapModule = ({ activeSubTab = "aset-tetap/aset" }: OperationalModuleProps) => {
   const [currentSubTab, setCurrentSubTab] = useState(activeSubTab);
 
   useEffect(() => {
@@ -34,18 +34,7 @@ export const AsetTetapModule = ({ activeSubTab = "aset-tetap/aset", onSubTabChan
     }
   }, [activeSubTab]);
 
-  const handleTabChange = (tab: string) => {
-    setCurrentSubTab(tab);
-    if (onSubTabChange) {
-      onSubTabChange(tab);
-    }
-  };
-  const [toastMsg, setToastMsg] = useState("");
-
-  const showToast = (msg: string) => {
-    setToastMsg(msg);
-    setTimeout(() => setToastMsg(""), 3500);
-  };
+  const { showToast } = useToast();
 
   const formatRupiah = (num: number | string) => new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR" }).format(Number(num));
 
@@ -132,16 +121,6 @@ export const AsetTetapModule = ({ activeSubTab = "aset-tetap/aset", onSubTabChan
 
   return (
     <div className="p-6 space-y-6">
-      {/* Toast Notification */}
-      {toastMsg && (
-        <div className="bg-emerald-600 text-white p-4 rounded-2xl shadow-lg flex items-center justify-between animate-in fade-in duration-200">
-          <div className="flex items-center gap-2 font-bold text-xs">
-            <CheckCircle2 className="w-5 h-5" />
-            <span>{toastMsg}</span>
-          </div>
-        </div>
-      )}
-
       {/* Module Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
@@ -151,45 +130,6 @@ export const AsetTetapModule = ({ activeSubTab = "aset-tetap/aset", onSubTabChan
           <p className="text-xs text-slate-500 mt-0.5">
             Pengelolaan inventaris aset tetap perusahaan, kategori penyusutan, dan log audit aset.
           </p>
-        </div>
-
-        {/* Sub-tab Navigation Switcher */}
-        <div className="bg-white p-1.5 rounded-2xl border border-slate-200 shadow-2xs flex items-center gap-1">
-          <button
-            onClick={() => handleTabChange("aset-tetap/aset")}
-            className={`px-3.5 py-2 rounded-xl text-xs font-extrabold transition-all cursor-pointer flex items-center gap-2 ${
-              currentSubTab === "aset-tetap/aset"
-                ? "bg-[#00c885] text-white shadow-xs"
-                : "text-slate-600 hover:bg-slate-100"
-            }`}
-          >
-            <Building className="w-4 h-4" />
-            <span>Daftar Aset Tetap</span>
-          </button>
-
-          <button
-            onClick={() => handleTabChange("aset-tetap/kategori-aset")}
-            className={`px-3.5 py-2 rounded-xl text-xs font-extrabold transition-all cursor-pointer flex items-center gap-2 ${
-              currentSubTab === "aset-tetap/kategori-aset"
-                ? "bg-[#00c885] text-white shadow-xs"
-                : "text-slate-600 hover:bg-slate-100"
-            }`}
-          >
-            <Layers className="w-4 h-4" />
-            <span>Kategori Aset</span>
-          </button>
-
-          <button
-            onClick={() => handleTabChange("aset-tetap/log-aktivitas")}
-            className={`px-3.5 py-2 rounded-xl text-xs font-extrabold transition-all cursor-pointer flex items-center gap-2 ${
-              currentSubTab === "aset-tetap/log-aktivitas"
-                ? "bg-[#00c885] text-white shadow-xs"
-                : "text-slate-600 hover:bg-slate-100"
-            }`}
-          >
-            <History className="w-4 h-4" />
-            <span>Log Aktivitas Aset</span>
-          </button>
         </div>
       </div>
 

@@ -1,4 +1,4 @@
-import { useState, useEffect, type FormEvent } from "react";
+import { useState, useEffect, type FormEvent, type MouseEvent } from "react";
 import {
   Building2,
   Search,
@@ -10,6 +10,7 @@ import {
   Trash2
 } from "lucide-react";
 import { api as mockApi } from "../services/api";
+import { useToast } from "../context/ToastContext";
 
 interface Office {
   id: string;
@@ -29,24 +30,47 @@ interface OfficeListProps {
 
 interface NewOfficeForm {
   name: string;
+  code: string;
   type: string;
-  parent: string;
+  parentId: string;
   reportAccess: string;
 }
 
+const slugifyOfficeCode = (name: string): string =>
+  name
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)/g, "");
+
 export const OfficeList = ({ onNavigateToPermissions, onNavigateToEdit }: OfficeListProps) => {
+  const { showToast } = useToast();
   const [offices, setOffices] = useState<Office[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedType, setSelectedType] = useState("ALL");
   const [showAddModal, setShowAddModal] = useState(false);
   const [openActionMenuId, setOpenActionMenuId] = useState<string | null>(null);
+  const [menuPos, setMenuPos] = useState<{ top: number; right: number } | null>(null);
+
+  const toggleActionMenu = (officeId: string, e: MouseEvent<HTMLButtonElement>) => {
+    if (openActionMenuId === officeId) {
+      setOpenActionMenuId(null);
+      return;
+    }
+    const rect = e.currentTarget.getBoundingClientRect();
+    const menuHeight = 132; // ~3 menu items
+    const top = rect.bottom + menuHeight > window.innerHeight ? rect.top - menuHeight - 4 : rect.bottom + 4;
+    setMenuPos({ top, right: window.innerWidth - rect.right });
+    setOpenActionMenuId(officeId);
+  };
 
   // New office form state
   const [newOffice, setNewOffice] = useState<NewOfficeForm>({
     name: "",
+    code: "",
     type: "Anper",
-    parent: "PT Ardana Perkasa Group",
+    parentId: "",
     reportAccess: "Anper Sendiri"
   });
 
@@ -72,19 +96,24 @@ export const OfficeList = ({ onNavigateToPermissions, onNavigateToEdit }: Office
 
     try {
       await mockApi.addEntity({
-        ...newOffice,
-        typeClass: newOffice.type === "Holding" ? "Holding (Induk)" : newOffice.type === "Cabang" ? "Cabang Operasional" : "Anak Perusahaan (Anper)"
+        code: newOffice.code.trim() || slugifyOfficeCode(newOffice.name),
+        name: newOffice.name,
+        type: newOffice.type,
+        parent_id: newOffice.parentId || null
       });
       setShowAddModal(false);
       setNewOffice({
         name: "",
+        code: "",
         type: "Anper",
-        parent: "PT Ardana Perkasa Group",
+        parentId: "",
         reportAccess: "Anper Sendiri"
       });
       fetchOffices();
+      showToast(`Office "${newOffice.name}" berhasil dibuat!`);
     } catch (err) {
       console.error("Failed to add office", err);
+      showToast("Gagal membuat office", "error");
     }
   };
 
@@ -94,9 +123,10 @@ export const OfficeList = ({ onNavigateToPermissions, onNavigateToEdit }: Office
     try {
       await mockApi.deleteOffice(office.id);
       fetchOffices();
+      showToast(`Office "${office.name}" berhasil dihapus`);
     } catch (err) {
       console.error("Failed to delete office", err);
-      alert(err instanceof Error ? err.message : "Gagal menghapus office");
+      showToast(err instanceof Error ? err.message : "Gagal menghapus office", "error");
     }
   };
 
@@ -278,19 +308,22 @@ export const OfficeList = ({ onNavigateToPermissions, onNavigateToEdit }: Office
                     <td className="py-4 px-6 text-center">
                       <div className="relative inline-block">
                         <button
-                          onClick={() => setOpenActionMenuId(openActionMenuId === office.id ? null : office.id)}
+                          onClick={(e) => toggleActionMenu(office.id, e)}
                           className="w-8 h-8 inline-flex items-center justify-center rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 transition-all cursor-pointer"
                         >
                           <MoreVertical className="w-4 h-4" />
                         </button>
 
-                        {openActionMenuId === office.id && (
+                        {openActionMenuId === office.id && menuPos && (
                           <>
                             <div
-                              className="fixed inset-0 z-10"
+                              className="fixed inset-0 z-40"
                               onClick={() => setOpenActionMenuId(null)}
                             />
-                            <div className="absolute right-0 mt-1 w-44 bg-white border border-slate-200 rounded-xl shadow-lg z-20 overflow-hidden text-left">
+                            <div
+                              style={{ top: menuPos.top, right: menuPos.right }}
+                              className="fixed w-44 bg-white border border-slate-200 rounded-xl shadow-lg z-50 overflow-hidden text-left"
+                            >
                               <button
                                 onClick={() => {
                                   setOpenActionMenuId(null);
@@ -356,8 +389,24 @@ export const OfficeList = ({ onNavigateToPermissions, onNavigateToEdit }: Office
                   required
                   placeholder="Contoh: PT Perkasa Utama / Cabang Bandung"
                   value={newOffice.name}
-                  onChange={(e) => setNewOffice({ ...newOffice, name: e.target.value })}
+                  onChange={(e) => setNewOffice({
+                    ...newOffice,
+                    name: e.target.value,
+                    code: newOffice.code === slugifyOfficeCode(newOffice.name) ? slugifyOfficeCode(e.target.value) : newOffice.code
+                  })}
                   className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-800 focus:outline-emerald-500"
+                />
+              </div>
+
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">Kode Office</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="Contoh: ent-bandung"
+                  value={newOffice.code}
+                  onChange={(e) => setNewOffice({ ...newOffice, code: e.target.value })}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-800 focus:outline-emerald-500 font-mono"
                 />
               </div>
 
@@ -378,13 +427,13 @@ export const OfficeList = ({ onNavigateToPermissions, onNavigateToEdit }: Office
               <div>
                 <label className="block font-bold text-slate-700 mb-1">Induk Entitas (Parent)</label>
                 <select
-                  value={newOffice.parent}
-                  onChange={(e) => setNewOffice({ ...newOffice, parent: e.target.value })}
+                  value={newOffice.parentId}
+                  onChange={(e) => setNewOffice({ ...newOffice, parentId: e.target.value })}
                   className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-800 focus:outline-emerald-500 cursor-pointer"
                 >
-                  <option value="PT Ardana Perkasa Group">PT Ardana Perkasa Group (Holding)</option>
-                  {offices.filter(o => o.type === "Anper").map((o) => (
-                    <option key={o.id} value={o.name}>{o.name}</option>
+                  <option value="">— Tanpa Induk (Holding) —</option>
+                  {offices.map((o) => (
+                    <option key={o.id} value={o.id}>{o.name}</option>
                   ))}
                 </select>
               </div>
